@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpine Linux 完全手册 — 从入门到GOST节点部署</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;--accent2:#818cf8;--green:#4ade80;--yellow:#fbbf24;--red:#f87171;--pink:#f472b6;--radius:12px;--radius-sm:8px}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+.hero{position:relative;min-height:70vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#0f172a,#1e1b4b,#0f172a)}
+.hero-c{position:absolute;inset:0;z-index:0}
+.hero-t{position:relative;z-index:1;text-align:center;padding:2rem}
+.h-badge{display:inline-block;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);padding:.35rem 1rem;border-radius:999px;font-size:.8rem;font-weight:600;margin-bottom:1.5rem}
+.hero-t h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;background:linear-gradient(135deg,#e2e8f0,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;margin-bottom:1rem}
+.hero-t p{font-size:1.15rem;color:var(--muted);max-width:650px;margin:0 auto 2rem}
+.h-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.5rem;border-radius:8px;font-weight:600;font-size:.9rem;text-decoration:none;transition:all .2s;cursor:pointer;border:none}
+.btn-p{background:var(--accent);color:#0f172a}
+.btn-p:hover{background:#7dd3fc;transform:translateY(-1px)}
+.btn-o{background:transparent;color:var(--text);border:1px solid var(--bg3)}
+.btn-o:hover{background:var(--bg2);border-color:var(--accent)}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--bg3)}
+.nav-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;padding:0 1.5rem;height:56px;overflow-x:auto;gap:.25rem}
+.nav a{color:var(--muted);text-decoration:none;font-size:.82rem;padding:.35rem .75rem;border-radius:6px;white-space:nowrap;transition:all .15s;font-weight:500}
+.nav a:hover,.nav a.act{color:var(--text);background:var(--bg2)}
+.ct{max-width:1100px;margin:0 auto;padding:0 1.5rem}
+section{padding:4rem 0;scroll-margin-top:64px}
+section:nth-child(even){background:var(--bg2)}
+.sl{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem}
+.st{font-size:clamp(1.5rem,3vw,2.25rem);font-weight:800;margin-bottom:1rem;line-height:1.25}
+.sd{color:var(--muted);max-width:650px;margin-bottom:2.5rem;font-size:1rem}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.cd{background:var(--bg);border:1px solid var(--bg3);border-radius:var(--radius);padding:1.5rem;transition:all .2s}
+.cd:hover{border-color:var(--accent);transform:translateY(-2px)}
+.ci{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1rem}
+.cd h3{font-size:1rem;margin-bottom:.4rem}
+.cd p{font-size:.88rem;color:var(--muted);line-height:1.6}
+.cb{background:#0a0f1e;border:1px solid var(--bg3);border-radius:var(--radius-sm);margin:1rem 0 1.5rem;overflow:hidden}
+.ch{display:flex;align-items:center;padding:.5rem 1rem;background:rgba(255,255,255,0.04);border-bottom:1px solid var(--bg3);font-size:.75rem;color:var(--muted);gap:.5rem}
+.cd2{width:10px;height:10px;border-radius:50%}
+.cd2:nth-child(1){background:#ef4444}
+.cd2:nth-child(2){background:#fbbf24}
+.cd2:nth-child(3){background:#4ade80}
+.cl{margin-left:auto;font-family:monospace;font-size:.7rem;opacity:.5}
+.cbody{padding:1rem 1.25rem;overflow-x:auto;font-family:"JetBrains Mono","Fira Code",monospace;font-size:.82rem;line-height:1.65;color:#e2e8f0;tab-size:2}
+.cbody .c{color:#64748b;font-style:italic}
+.cbody .k{color:#818cf8}
+.cbody .s{color:#4ade80}
+.cbody .v{color:#fbbf24}
+.cbody .f{color:#38bdf8}
+.cbody .pr{color:#4ade80;-webkit-user-select:none;user-select:none}
+.steps{counter-reset:step}
+.step{counter-increment:step;padding-left:3rem;position:relative;margin-bottom:2rem}
+.step::before{content:counter(step);position:absolute;left:0;top:2px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+.step h3{font-size:1.05rem;margin-bottom:.3rem}
+.step p{color:var(--muted);font-size:.9rem;margin-bottom:.5rem}
+.tw{overflow-x:auto;margin:1.5rem 0}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:.7rem 1rem;border-bottom:1px solid var(--bg3)}
+th{font-weight:600;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.ths{display:flex;border-bottom:2px solid var(--bg3);margin-top:1.5rem;flex-wrap:wrap}
+.tb{padding:.6rem 1.2rem;background:none;border:none;color:var(--muted);font-size:.85rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tb:hover{color:var(--text)}
+.tb.act{color:var(--accent);border-bottom-color:var(--accent)}
+.tp{display:none;padding-top:1rem}
+.tp.act{display:block}
+.al{display:flex;gap:.75rem;align-items:flex-start;padding:1rem 1.25rem;border-radius:var(--radius-sm);margin:1.5rem 0;font-size:.88rem}
+.al-i{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2)}
+.al-w{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2)}
+.al-s{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2)}
+.al-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.tag{display:inline-block;background:rgba(56,189,248,0.1);color:var(--accent);border:1px solid rgba(56,189,248,0.25);padding:.1rem .55rem;border-radius:4px;font-size:.75rem;font-weight:600;margin:.12rem}
+.tag.g{background:rgba(74,222,128,0.1);color:var(--green);border-color:rgba(74,222,128,0.25)}
+.tag.y{background:rgba(251,191,36,0.1);color:var(--yellow);border-color:rgba(251,191,36,0.25)}
+.tag.r{background:rgba(248,113,113,0.1);color:var(--red);border-color:rgba(248,113,113,0.25)}
+.sp{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:2rem 0}
+.sp-item{background:var(--bg);border:1px solid var(--bg3);border-radius:var(--radius);padding:1.25rem;text-align:center}
+.sp-v{font-size:1.75rem;font-weight:800}
+.sp-v.g{color:var(--green)}
+.sp-v.y{color:var(--yellow)}
+.sp-v.a{color:var(--accent)}
+.sp-l{font-size:.8rem;color:var(--muted);margin-top:.25rem}
+.lead{font-size:1.05rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.7}
+hr{border:none;border-top:1px solid var(--bg3);margin:2rem 0}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin:1.5rem 0}
+.bq{border-left:3px solid var(--accent);padding:.75rem 1.25rem;margin:1.5rem 0;background:rgba(56,189,248,0.04);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:.9rem;color:var(--muted)}
+footer{text-align:center;padding:3rem 1.5rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--bg3)}
+@media(max-width:640px){.hero-t h1{font-size:2rem}.cg{grid-template-columns:1fr}.sp{grid-template-columns:1fr 1fr}.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <canvas class="hero-c" id="hc"></canvas>
+  <div class="hero-t">
+    <div class="h-badge">Alpine 3.x &middot; apk &middot; OpenRC &middot; x86_64 / ARM64</div>
+    <h1>Alpine Linux 完全手册</h1>
+    <p>从系统安装到 GOST 节点部署，覆盖 apk 包管理、OpenRC 服务、Docker 配置、多发行版兼容性等全面内容。适用于 Alpine、Debian、Ubuntu、CentOS 全系。</p>
+    <div class="h-btns">
+      <a href="#intro" class="btn btn-p">开始阅读</a>
+      <a href="#deploy" class="btn btn-o">跳转到部署</a>
+      <a href="#compat" class="btn btn-o">兼容性一览</a>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a href="#intro">简介</a>
+    <a href="#install">安装</a>
+    <a href="#apk">apk</a>
+    <a href="#openrc">OpenRC</a>
+    <a href="#network">网络</a>
+    <a href="#docker">Docker</a>
+    <a href="#deploy">GOST部署</a>
+    <a href="#compat">兼容性</a>
+    <a href="#trouble">故障排查</a>
+  </div>
+</nav>
+
+<!-- ====== 1. Intro ====== -->
+<section id="intro">
+  <div class="ct">
+    <div class="sl">Chapter 1</div>
+    <h2 class="st">Alpine Linux 是什么</h2>
+    <p class="sd">轻量、安全、简单的 Linux 发行版，基于 musl libc 和 BusyBox，全系使用 OpenRC 作为服务管理器。</p>
+
+    <div class="sp">
+      <div class="sp-item"><div class="sp-v g">~5 MB</div><div class="sp-l">基础 Docker 镜像大小</div></div>
+      <div class="sp-item"><div class="sp-v y">64-128 MB</div><div class="sp-l">最低运行内存</div></div>
+      <div class="sp-item"><div class="sp-v a">musl + BusyBox</div><div class="sp-l">C 库 + 工具箱</div></div>
+      <div class="sp-item"><div class="sp-v a">OpenRC</div><div class="sp-l">服务管理器</div></div>
+      <div class="sp-item"><div class="sp-v a">apk</div><div class="sp-l">包管理器</div></div>
+      <div class="sp-item"><div class="sp-v g">3.x 全系</div><div class="sp-l">版本兼容</div></div>
+    </div>
+
+    <div class="cg">
+      <div class="cd"><div class="ci" style="background:rgba(56,189,248,0.1)">&#9889;</div><h3>极致轻量</h3><p>基础系统仅需 5MB 磁盘和 64MB 内存。使用 musl libc 替代 glibc，BusyBox 替代 GNU coreutils，编译出的二进制也更小。</p></div>
+      <div class="cd"><div class="ci" style="background:rgba(129,140,248,0.1)">&#128274;</div><h3>安全优先</h3><p>所有包默认开启 Stack Smashing Protection、FORTIFY_SOURCE、Position Independent Executable。内核自带 PaX/grsec 加固选项。</p></div>
+      <div class="cd"><div class="ci" style="background:rgba(74,222,128,0.1)">&#128230;</div><h3>apk 包管理</h3><p>极简高效的包管理器，依赖解析速度极快，支持多版本仓库（stable/edge/testing），一条命令完成所有操作。</p></div>
+      <div class="cd"><div class="ci" style="background:rgba(244,114,182,0.1)">&#128268;</div><h3>全系兼容</h3><p>Flux Panel 的 install.sh 适配 Alpine 3.x 全系，同时原生支持 Debian、Ubuntu、CentOS 等主流发行版。</p></div>
+    </div>
+
+    <div class="al al-i"><span class="al-icon">&#128161;</span><div><strong>适用场景：</strong>Docker 容器基础镜像、NAT VPS / 低配云服务器、嵌入式/IoT 设备、路由器/网关、CI/CD 构建环境、Flux Panel GOST 节点。</div></div>
+  </div>
+</section>
+
+<!-- ====== 2. Install ====== -->
+<section id="install">
+  <div class="ct">
+    <div class="sl">Chapter 2</div>
+    <h2 class="st">安装 Alpine Linux</h2>
+    <p class="sd">Alpine 全系 3.x 版本的安装流程完全一致。标准镜像约 200MB，virt 镜像约 50MB。</p>
+
+    <div class="ths">
+      <button class="tb act" data-tab="vpsi">VPS 安装</button>
+      <button class="tb" data-tab="locali">本地 / 虚拟机</button>
+    </div>
+
+    <div class="tp act" id="vpsi">
+      <div class="steps">
+        <div class="step"><h3>下载镜像</h3><p>从 <a href="https://alpinelinux.org/downloads/" style="color:var(--accent)" target="_blank">alpinelinux.org/downloads</a> 选择适用于你架构的镜像。</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c"># x86_64</span><br>wget https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/alpine-standard-{{version}}-x86_64.iso<br><br><span class="c"># ARM64 (树莓派等)</span><br>wget https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/aarch64/alpine-standard-{{version}}-aarch64.iso</div></div></div>
+        <div class="step"><h3>启动并安装</h3><p>从 ISO 启动后，登录 root（空密码），执行 <code>setup-alpine</code> 按向导完成配置——键盘布局、主机名、网卡、时区、源、ssh、磁盘、用户。</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="pr">localhost:~#</span> setup-alpine<br><span class="pr">localhost:~#</span> reboot</div></div></div>
+      </div>
+    </div>
+
+    <div class="tp" id="locali">
+      <div class="steps">
+        <div class="step"><h3>下载 virt 镜像</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">wget https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/alpine-virt-{{version}}-x86_64.iso</div></div></div>
+        <div class="step"><h3>创建虚拟机</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">qemu-img create -f qcow2 alpine.qcow2 4G<br>qemu-system-x86_64 -m 512 -cdrom alpine-virt-{{version}}-x86_64.iso -drive file=alpine.qcow2,format=qcow2 -net nic -net user</div></div></div>
+        <div class="step"><h3>安装后配置</h3><p>安装完成后建议立即执行：</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">apk update && apk upgrade<br>apk add bash curl wget vim tmux<br>setup-timezone -z Asia/Shanghai    <span class="c"># 设置时区</span><br>setup-sshd -c openssh              <span class="c"># 启用 SSH</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 3. apk ====== -->
+<section id="apk">
+  <div class="ct">
+    <div class="sl">Chapter 3</div>
+    <h2 class="st">apk 包管理</h2>
+    <p class="sd">Alpine 全系使用 apk 作为包管理器，命令简洁统一，跨版本完全一致。</p>
+
+    <div class="cg">
+      <div class="cd"><div class="ci" style="background:rgba(74,222,128,0.1)">&#128269;</div><h3>搜索</h3><p><code>apk search &lt;keyword&gt;</code></p></div>
+      <div class="cd"><div class="ci" style="background:rgba(56,189,248,0.1)">&#128230;</div><h3>安装</h3><p><code>apk add &lt;package&gt;</code></p></div>
+      <div class="cd"><div class="ci" style="background:rgba(251,191,36,0.1)">&#128465;&#65039;</div><h3>删除</h3><p><code>apk del &lt;package&gt;</code></p></div>
+      <div class="cd"><div class="ci" style="background:rgba(244,114,182,0.1)">&#128203;</div><h3>列出已安装</h3><p><code>apk info</code></p></div>
+      <div class="cd"><div class="ci" style="background:rgba(129,140,248,0.1)">&#128220;</div><h3>详细信息</h3><p><code>apk info -a &lt;pkg&gt;</code></p></div>
+      <div class="cd"><div class="ci" style="background:rgba(248,113,113,0.1)">&#9889;</div><h3>升级</h3><p><code>apk update && apk upgrade</code></p></div>
+    </div>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c"># 常用操作</span><br>apk update                        <span class="c"># 更新源缓存</span><br>apk upgrade                       <span class="c"># 升级所有包</span><br>apk add bash curl wget vim htop   <span class="c"># 安装包</span><br>apk del vim                       <span class="c"># 删除包</span><br>apk search nginx                  <span class="c"># 搜索</span><br>apk info                          <span class="c"># 列出已安装</span><br>apk info -a curl                  <span class="c"># 查看详细信息</span><br>apk cache clean                   <span class="c"># 清理缓存</span><br><br><span class="c"># 安装编译工具</span><br>apk add build-base gcc g++ make<br><br><span class="c"># 安装 Docker</span><br>apk add docker docker-compose</div></div>
+
+    <div class="al al-w"><span class="al-icon">&#9888;&#65039;</span><div><strong>musl vs glibc 兼容：</strong>Alpine 使用 musl libc 替代 glibc。部分闭源软件可能不兼容。如果遇到缺失 glibc 符号的错误，安装兼容层：<code>apk add gcompat</code>。<br>但 GOST 本身是 Go 静态编译的二进制，不依赖 glibc，在 musl 下完美运行。</div></div>
+  </div>
+</section>
+
+<!-- ====== 4. OpenRC ====== -->
+<section id="openrc">
+  <div class="ct">
+    <div class="sl">Chapter 4</div>
+    <h2 class="st">OpenRC 服务管理</h2>
+    <p class="sd">Alpine 全系使用 OpenRC 替代 systemd。核心命令比 systemd 更少，5 分钟即可上手。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>操作</th><th>systemd 命令</th><th>OpenRC 命令</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>启动服务</td><td><code>systemctl start nginx</code></td><td><code>rc-service nginx start</code></td><td>立即启动</td></tr>
+          <tr><td>停止服务</td><td><code>systemctl stop nginx</code></td><td><code>rc-service nginx stop</code></td><td>立即停止</td></tr>
+          <tr><td>重启服务</td><td><code>systemctl restart nginx</code></td><td><code>rc-service nginx restart</code></td><td>停止再启动</td></tr>
+          <tr><td>查看状态</td><td><code>systemctl status nginx</code></td><td><code>rc-service nginx status</code></td><td>显示运行/停止/crashed</td></tr>
+          <tr><td>开机自启</td><td><code>systemctl enable nginx</code></td><td><code>rc-update add nginx default</code></td><td>加入默认运行级</td></tr>
+          <tr><td>取消自启</td><td><code>systemctl disable nginx</code></td><td><code>rc-update del nginx</code></td><td>从运行级移除</td></tr>
+          <tr><td>重载配置</td><td><code>systemctl reload nginx</code></td><td><code>rc-service nginx reload</code></td><td>发送 SIGHUP</td></tr>
+          <tr><td>查看日志</td><td><code>journalctl -u nginx</code></td><td><code>cat /var/log/messages</code></td><td>系统日志</td></tr>
+          <tr><td>列出服务</td><td><code>systemctl list-units</code></td><td><code>rc-service --list</code></td><td>列出所有服务</td></tr>
+          <tr><td>重载服务定义</td><td><code>systemctl daemon-reload</code></td><td>（不需要）</td><td>OpenRC 每次读取文件</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin:2rem 0 0.5rem;font-size:1.1rem">OpenRC 服务脚本编写</h3>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem">简单服务用变量声明即可，不需要写 start/stop 函数：</p>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">/etc/init.d/myapp</span></div><div class="cbody"><span class="c">#!/sbin/openrc-run</span><br>name="myapp"<br>description="My Custom Service"<br>command="/usr/local/bin/myapp"<br>command_args="--config /etc/myapp/config.yml"<br>command_background=<span class="k">true</span><br>pidfile="/run/${name}.pid"<br><br>depend() {<br>    need net<br>}</div></div>
+
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem">GOST 节点服务的 OpenRC 脚本（install.sh 自动生成）：</p>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">/etc/init.d/gost</span></div><div class="cbody"><span class="c">#!/sbin/openrc-run</span><br>name="gost"<br>description="Gost Proxy Service"<br>command="/etc/gost/gost.sh"<br>command_background=<span class="k">true</span><br>pidfile="/run/gost.pid"<br><br>depend() {<br>    need net<br>}</div></div>
+
+    <p style="color:var(--muted);font-size:.9rem">启动包装脚本（解决 daemonize 后 CWD 被重置的问题）：</p>
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">/etc/gost/gost.sh</span></div><div class="cbody"><span class="c">#!/bin/sh</span><br><span class="k">cd</span> /etc/gost && <span class="k">exec</span> /etc/gost/gost "$@"</div></div>
+  </div>
+</section>
+
+<!-- ====== 5. Network ====== -->
+<section id="network">
+  <div class="ct">
+    <div class="sl">Chapter 5</div>
+    <h2 class="st">网络配置</h2>
+    <p class="sd">Alpine 使用 /etc/network/interfaces 配置网络，风格与 Debian 一致。</p>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">/etc/network/interfaces</span></div><div class="cbody"><span class="c"># 环回接口</span><br>auto lo<br>iface lo inet loopback<br><br><span class="c"># DHCP</span><br>auto eth0<br>iface eth0 inet dhcp<br><br><span class="c"># 静态 IP</span><br><span class="c"># auto eth0</span><br><span class="c"># iface eth0 inet static</span><br><span class="c">#     address 192.168.1.100</span><br><span class="c">#     netmask 255.255.255.0</span><br><span class="c">#     gateway 192.168.1.1</span><br><span class="c">#     dns-nameservers 1.1.1.1 8.8.8.8</span></div></div>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c"># 重启网络</span><br>rc-service networking restart<br><br><span class="c"># 查看 IP</span><br>ip addr show<br><br><span class="c"># 添加 DNS</span><br>echo "nameserver 1.1.1.1" > /etc/resolv.conf<br><br><span class="c"># 开放端口</span><br>apk add iptables<br>iptables -A INPUT -p tcp --dport 22 -j ACCEPT<br>iptables -A INPUT -p tcp --dport 6365 -j ACCEPT<br>rc-service iptables save</div></div>
+  </div>
+</section>
+
+<!-- ====== 6. Docker ====== -->
+<section id="docker">
+  <div class="ct">
+    <div class="sl">Chapter 6</div>
+    <h2 class="st">Docker on Alpine</h2>
+    <p class="sd">Alpine 是 Docker 最流行的宿主机操作系统之一，安装配置在所有 Alpine 3.x 上一致。</p>
+
+    <div class="steps">
+      <div class="step"><h3>安装 Docker</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">apk add docker docker-compose<br>rc-update add docker default<br>rc-service docker start</div></div></div>
+      <div class="step"><h3>验证</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">docker info<br>docker run --rm hello-world</div></div></div>
+      <div class="step"><h3>配置 IPv6</h3><p>如需 Docker 容器使用 IPv6：</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">cat > /etc/docker/daemon.json <<'EOF'
+{
+  "ipv6": true,
+  "fixed-cidr-v6": "fd00::/80"
+}
+EOF
+rc-service docker restart</div></div></div>
+    </div>
+
+    <div class="al al-i"><span class="al-icon">&#128161;</span><div><strong>注意：</strong>Alpine 上重启 Docker 使用 <code>rc-service docker restart</code>。Flux Panel 的 <code>panel_install.sh</code> 已自动处理此差异——在 Alpine 上检测到 <code>is_alpine</code> 后优先使用 <code>rc-service docker restart</code>。</div></div>
+  </div>
+</section>
+
+<!-- ====== 7. Deploy ====== -->
+<section id="deploy">
+  <div class="ct">
+    <div class="sl">Chapter 7</div>
+    <h2 class="st">部署 GOST 节点</h2>
+    <p class="sd">在 Alpine 上一键部署 Flux Panel 的 GOST 代理节点。整个过程只需要 <code>install.sh</code> 一个文件。</p>
+
+    <div class="al al-s"><span class="al-icon">&#9989;</span><div><strong>跨发行版兼容：</strong>同一个 <code>install.sh</code> 同时支持 <span class="tag g">Alpine</span> <span class="tag">Debian</span> <span class="tag">Ubuntu</span> <span class="tag">CentOS</span> <span class="tag g">Fedora</span> <span class="tag">Arch</span> <span class="tag y">openSUSE</span> 等。脚本自动检测系统类型，Alpine 用 OpenRC，其他用 systemd。</div></div>
+
+    <div class="steps">
+      <div class="step"><h3>安装依赖</h3><p>Alpine 上只需三个包：</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">apk add bash curl coreutils dos2unix</div></div><p style="color:var(--muted);font-size:.85rem;margin-top:.3rem">Debian/Ubuntu: <code>apt install bash curl</code> &nbsp;|&nbsp; CentOS: <code>yum install bash curl</code></p></div>
+      <div class="step"><h3>上传 install.sh</h3><p>从本机传到 Alpine 服务器：</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c"># 本机执行</span><br>scp install.sh root@<span class="v">你的节点IP</span>:/root/</div></div></div>
+      <div class="step"><h3>运行安装</h3><p>SSH 上服务器，确保行尾正确后运行：</p><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">dos2unix install.sh                      <span class="c"># 如从 Windows 上传，需要转 LF</span><br>bash install.sh -a <span class="v">面板地址:端口</span> -s <span class="v">密钥</span></div></div><p style="color:var(--muted);font-size:.85rem;margin-top:.3rem">脚本会自动：检测系统类型 &#8594; 下载对应架构的 GOST 二进制 &#8594; 创建配置文件 &#8594; 注册服务（OpenRC 或 systemd）&#8594; 启动并设为开机自启。</p></div>
+      <div class="step"><h3>验证节点状态</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c"># 服务状态（OpenRC / systemd 自动适配）</span><br>rc-service gost status                <span class="c"># Alpine</span><br>systemctl status gost                 <span class="c"># Debian/Ubuntu/CentOS</span><br><br><span class="c"># 进程检查</span><br>ps aux | grep gost<br><br><span class="c"># 手动前台测试（可以看到实时输出）</span><br>cd /etc/gost && timeout 5 ./gost</div></div></div>
+      <div class="step"><h3>检查面板连通性</h3><div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody">nc -zv <span class="v">面板地址</span> <span class="v">端口</span><br><span class="c"># 或</span><br>curl -I http://<span class="v">面板地址</span>:<span class="v">端口</span></div></div></div>
+    </div>
+
+    <div class="al al-w"><span class="al-icon">&#9888;&#65039;</span><div><strong>常见失败原因：</strong><br>1. <strong>CRLF 行尾</strong> — 从 Windows 上传后必须 <code>dos2unix install.sh</code>，否则报 <code>$\r</code> 错误。<br>2. <strong>工作目录问题</strong> — OpenRC 的 <code>start-stop-daemon --background</code> 后台化时会 chdir 到 /，导致 GOST 找不到 <code>/etc/gost/config.json</code>。install.sh 通过一个包装脚本 <code>/etc/gost/gost.sh</code> 解决此问题（先 cd 再 exec）。<br>3. <strong>网络不通</strong> — 检查是否能连到面板地址和端口。</div></div>
+
+    <h3 style="margin:2rem 0 1rem;font-size:1.1rem">内存占用</h3>
+    <p style="color:var(--muted);font-size:.9rem">GOST 是 Go 静态编译的二进制，资源占用非常低：</p>
+    <div class="sp" style="margin-top:.75rem">
+      <div class="sp-item"><div class="sp-v g">15-30 MB</div><div class="sp-l">GOST 进程内存</div></div>
+      <div class="sp-item"><div class="sp-v y">40-60 MB</div><div class="sp-l">Alpine 系统空闲</div></div>
+      <div class="sp-item"><div class="sp-v a">128 MB</div><div class="sp-l">推荐总内存</div></div>
+      <div class="sp-item"><div class="sp-v y">64 MB</div><div class="sp-l">极限最低内存</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 8. Compat ====== -->
+<section id="compat">
+  <div class="ct">
+    <div class="sl">Chapter 8</div>
+    <h2 class="st">兼容性一览</h2>
+    <p class="sd">install.sh 是一个跨发行版、跨架构的通用安装脚本，在同一个文件里同时处理了 OpenRC 和 systemd 两条路径。</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>项目</th><th>兼容</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>Alpine 3.10 ~ 3.21</td><td><span class="tag g">&#10003;</span></td><td>脚本仅检测 <code>ID=alpine</code>，不检查版本号。全系 OpenRC + apk。</td></tr>
+          <tr><td>Alpine Edge</td><td><span class="tag g">&#10003;</span></td><td>Edge 同样使用 OpenRC，完全兼容。</td></tr>
+          <tr><td>Debian / Ubuntu</td><td><span class="tag g">&#10003;</span></td><td>走 systemd 分支 + apt。tcpkill 安装 <code>apt install dsniff</code>。</td></tr>
+          <tr><td>CentOS / RHEL / Fedora</td><td><span class="tag g">&#10003;</span></td><td>走 systemd 分支 + yum/dnf。tcpkill 安装 <code>yum/dnf install dsniff</code>。</td></tr>
+          <tr><td>Arch Linux / Manjaro</td><td><span class="tag g">&#10003;</span></td><td>走 systemd 分支 + pacman。</td></tr>
+          <tr><td>openSUSE / SLES</td><td><span class="tag g">&#10003;</span></td><td>走 systemd 分支 + zypper。</td></tr>
+          <tr><td>Gentoo</td><td><span class="tag g">&#10003;</span></td><td>走 systemd 分支 + emerge。</td></tr>
+          <tr><td>macOS</td><td><span class="tag y">部分</span></td><td>仅 tcpkill 安装走 Homebrew，GOST 服务不受支持。</td></tr>
+          <tr><td>x86_64 (amd64)</td><td><span class="tag g">&#10003;</span></td><td>最广泛支持，自动下载 amd64 版本 GOST 二进制。</td></tr>
+          <tr><td>ARM64 (aarch64)</td><td><span class="tag g">&#10003;</span></td><td>树莓派、Oracle ARM、AWS Graviton 等。自动识别并下载 arm64 版本。</td></tr>
+          <tr><td>ARM32 / 其他架构</td><td><span class="tag y">fallback</span></td><td>脚本 fallback 下载 amd64，但无法执行。需自行编译对应架构的 GOST。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin:2rem 0 0.5rem;font-size:1.1rem">检测逻辑源码</h3>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem">install.sh 中用于跨平台适配的核心代码：</p>
+
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">install.sh 检测代码</span></div><div class="cbody"><span class="c"># 检测是否为 Alpine Linux（不检查版本号）</span><br>is_alpine() {<br>  <span class="k">if</span> [ -f /etc/os-release ]; <span class="k">then</span><br>    . /etc/os-release<br>    [ "$ID" = "alpine" ]<br>    <span class="k">return</span> $?<br>  <span class="k">fi</span><br>  <span class="k">return</span> 1<br>}<br><br><span class="c"># 检测系统架构（自动适配 x86_64 / ARM64）</span><br>get_architecture() {<br>    ARCH=$(uname -m)<br>    <span class="k">case</span> <span class="v">$ARCH</span> <span class="k">in</span><br>        x86_64)     <span class="k">echo</span> "amd64" ;;<br>        aarch64|arm64) <span class="k">echo</span> "arm64" ;;<br>        *)          <span class="k">echo</span> "amd64" ;;<br>    <span class="k">esac</span><br>}<br><br><span class="c"># 安装 tcpkill（常见发行版全覆盖）</span><br><span class="k">case</span> <span class="v">$DISTRO</span> <span class="k">in</span><br>  ubuntu|debian)     apt install -y dsniff ;;<br>  centos|rhel|fedora) yum/dnf install -y dsniff ;;<br>  alpine)            apk add dsniff ;;<br>  arch|manjaro)      pacman -S dsniff ;;<br>  opensuse*|sles)    zypper install -y dsniff ;;<br>  gentoo)            emerge net-analyzer/dsniff ;;<br><span class="k">esac</span></div></div>
+
+    <div class="al al-s"><span class="al-icon">&#9989;</span><div><strong>核心设计原则：</strong>不要检测"不是 Alpine"，而是检测"是 Alpine"——{ }is_alpine() 返回 true 就走 OpenRC，返回 false 就走 systemd。这样新增任何未来的发行版都不需要改脚本。</div></div>
+  </div>
+</section>
+
+<!-- ====== 9. Troubleshooting ====== -->
+<section id="trouble">
+  <div class="ct">
+    <div class="sl">Chapter 9</div>
+    <h2 class="st">故障排查</h2>
+    <p class="sd">GOST 节点部署和 Alpine 使用中的常见问题及解决方法。</p>
+
+    <div class="ths">
+      <button class="tb act" data-tab="tbg">GOST 节点</button>
+      <button class="tb" data-tab="tbn">网络</button>
+      <button class="tb" data-tab="tbp">包管理</button>
+      <button class="tb" data-tab="tbs">系统</button>
+    </div>
+
+    <div class="tp act" id="tbg">
+      <table><thead><tr><th style="width:25%">症状</th><th style="width:25%">原因</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr><td><code>rc-service gost status</code> 显示 crashed</td><td>config.json 未加载到</td><td>运行 <code>cd /etc/gost && timeout 5 ./gost</code> 看报错。通常是工作目录不对（OpenRC daemonize 后 chdir 到 /），但 install.sh 已通过 <code>gost.sh</code> 包装脚本解决此问题。</td></tr>
+        <tr><td>面板显示节点离线</td><td>WebSocket 连接失败</td><td><code>nc -zv 面板地址 端口</code> 检查连通性，<code>curl -I http://面板地址:端口</code> 检查 HTTP 响应。</td></tr>
+        <tr><td>上传后运行报 <code>$\r</code></td><td>Windows CRLF 行尾</td><td><code>dos2unix install.sh</code> 或 <code>sed -i 's/\r//' install.sh</code></td></tr>
+        <tr><td><code>ps aux | grep gost</code> 看不到进程</td><td>服务启动后立刻退出</td><td><code>cat /var/log/messages | grep gost</code> 查看日志。</td></tr>
+        <tr><td>安装时报 "No such file"</td><td>脚本行尾是 CRLF</td><td><code>dos2unix install.sh</code></td></tr>
+        <tr><td>手动 <code>cd /etc/gost && ./gost</code> 成功，但服务启动就 crash</td><td>OpenRC 后台化时重置了 CWD</td><td>确认 <code>/etc/init.d/gost</code> 中 <code>command</code> 指向的是 <code>/etc/gost/gost.sh</code> 而非 <code>/etc/gost/gost</code></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="tp" id="tbn">
+      <table><thead><tr><th style="width:25%">症状</th><th style="width:25%">原因</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr><td>ping 不通外网</td><td>DNS 或路由未配置</td><td>检查 <code>/etc/resolv.conf</code>，添加 <code>nameserver 1.1.1.1</code></td></tr>
+        <tr><td>端口无法访问</td><td>防火墙未放行</td><td><code>iptables -A INPUT -p tcp --dport 端口 -j ACCEPT</code></td></tr>
+        <tr><td>DHCP 获取不到 IP</td><td>网卡未正确初始化</td><td><code>setup-interfaces</code> 重新配置或手动编辑 <code>/etc/network/interfaces</code></td></tr>
+        <tr><td>IPv6 不工作</td><td>内核模块未加载</td><td><code>modprobe ipv6</code></td></tr>
+        <tr><td>Docker 网络不通</td><td>iptables 规则被覆盖</td><td><code>rc-service docker restart</code></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="tp" id="tbp">
+      <table><thead><tr><th style="width:25%">症状</th><th style="width:25%">原因</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr><td>apk add 报签名错误</td><td>源证书过期</td><td><code>apk update && apk upgrade</code></td></tr>
+        <tr><td>找不到某个包</td><td>testing 源未启用</td><td>添加 edge/testing 到 <code>/etc/apk/repositories</code></td></tr>
+        <tr><td>glibc 程序报错</td><td>musl 不兼容</td><td><code>apk add gcompat</code></td></tr>
+        <tr><td>apk search 结果太少</td><td>仅启用了 main 源</td><td>启用 community 源：<code>echo "https://dl-cdn.alpinelinux.org/alpine/v3.21/community" >> /etc/apk/repositories</code></td></tr>
+      </tbody></table>
+    </div>
+
+    <div class="tp" id="tbs">
+      <table><thead><tr><th style="width:25%">症状</th><th style="width:25%">原因</th><th>解决</th></tr></thead>
+      <tbody>
+        <tr><td>SSH 连不上</td><td>openssh 未启动</td><td><code>apk add openssh && rc-update add sshd default && rc-service sshd start</code></td></tr>
+        <tr><td>时区不对</td><td>未设置时区</td><td><code>setup-timezone -z Asia/Shanghai</code></td></tr>
+        <tr><td>磁盘空间满</td><td>日志或缓存堆积</td><td><code>apk cache clean && rm -rf /var/log/*.gz</code></td></tr>
+        <tr><td>文件系统只读</td><td>磁盘异常挂载</td><td><code>mount -o remount,rw /</code></td></tr>
+        <tr><td>busybox 命令不够用</td><td>需要 GNU 版本</td><td><code>apk add coreutils findutils grep sed</code></td></tr>
+      </tbody></table>
+    </div>
+
+    <hr>
+    <h3 style="margin:1rem 0 0.5rem;font-size:1.1rem">一键诊断脚本</h3>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.5rem">在 Alpine 服务器上运行，快速定位问题：</p>
+    <div class="cb"><div class="ch"><span class="cd2"></span><span class="cd2"></span><span class="cd2"></span><span class="cl">bash</span></div><div class="cbody"><span class="c">#!/bin/sh</span><br>echo "=== 系统 ===" && uname -a<br>echo "=== 发行版 ===" && cat /etc/os-release | grep -E "^(ID|VERSION_ID)="<br>echo "=== 内存 ===" && free -h | head -2<br>echo "=== 磁盘 ===" && df -h / | tail -1<br>echo "=== GOST ===" && (rc-service gost status 2>&1 || systemctl status gost 2>&1 || echo "not installed")<br>echo "=== 进程 ===" && (ps aux | grep gost | grep -v grep || echo "no gost process")<br>echo "=== 配置 ===" && ls -la /etc/gost/ 2>&1<br>echo "=== 连通性 ===" && nc -zv <span class="v">面板地址</span> <span class="v">端口</span> 2>&1</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>Alpine Linux 完全手册 &middot; 适配 Alpine 3.x / Debian / Ubuntu / CentOS / Arch / openSUSE / Gentoo</p>
+  <p style="margin-top:.3rem"><a href="https://docs.alpinelinux.org" style="color:var(--accent)" target="_blank">docs.alpinelinux.org</a> &middot; <a href="https://alpinelinux.org/downloads/" style="color:var(--accent)" target="_blank">下载镜像</a> &middot; <a href="https://github.com/bqlpfy/flux-panel" style="color:var(--accent)" target="_blank">Flux Panel</a></p>
+</footer>
+
+<script>
+var c=document.getElementById("hc"),x=c.getContext("2d");
+function r(){c.width=c.offsetWidth;c.height=c.offsetHeight}r();window.addEventListener("resize",r);
+var p=Array.from({length:50},function(){return{x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.5+0.5}});
+function a(){x.clearRect(0,0,c.width,c.height);
+p.forEach(function(q){q.x+=q.vx;q.y+=q.vy;if(q.x<0)q.x=c.width;if(q.x>c.width)q.x=0;if(q.y<0)q.y=c.height;if(q.y>c.height)q.y=0;x.beginPath();x.arc(q.x,q.y,q.r,0,Math.PI*2);x.fillStyle="rgba(56,189,248,0.35)";x.fill()});
+for(var i=0;i<p.length;i++)for(var j=i+1;j<p.length;j++){var dx=p[i].x-p[j].x,dy=p[i].y-p[j].y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<120){x.beginPath();x.moveTo(p[i].x,p[i].y);x.lineTo(p[j].x,p[j].y);x.strokeStyle="rgba(56,189,248,"+(0.08*(1-dist/120))+")";x.lineWidth=0.6;x.stroke()}}
+requestAnimationFrame(a)}a();
+document.querySelectorAll(".ths").forEach(function(g){g.querySelectorAll(".tb").forEach(function(b){b.addEventListener("click",function(){var id=this.dataset.tab;this.closest(".ths").querySelectorAll(".tb").forEach(function(x){x.classList.remove("act")});this.classList.add("act");this.closest("section").querySelectorAll(".tp").forEach(function(x){x.classList.remove("act")});var t=document.getElementById(id);if(t)t.classList.add("act")})})});
+new IntersectionObserver(function(e){e.forEach(function(e){if(e.isIntersecting){document.querySelectorAll(".nav a").forEach(function(a){a.classList.remove("act")});document.querySelectorAll(".nav a").forEach(function(a){if(a.getAttribute("href")==="#"+e.target.getAttribute("id"))a.classList.add("act")})}})},{rootMargin:"-50% 0px -50% 0px"}).observe(document.querySelector("section"));
+</script>
+</body>
+</html>
